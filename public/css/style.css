@@ -1,0 +1,102 @@
+/* public/css/style.css */
+:root {
+    --bg-color: #F9F7F2;    /* Màu kem nền */
+    --main-color: #D4A5A5;  /* Màu hồng đất chủ đạo */
+    --main-hover: #c08e8e;  /* Màu hồng đậm hơn khi di chuột */
+    --text-color: #4A4A4A;  /* Màu chữ xám */
+    --white: #ffffff;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.card-custom {
+    background-color: var(--white);
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); /* Bóng mờ nhẹ */
+}
+
+.btn-lune {
+    background-color: var(--main-color);
+    color: var(--white);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px; /* Nút bo tròn */
+    transition: 0.3s;
+}
+
+.btn-lune:hover {
+    background-color: var(--main-hover);
+    color: var(--white);
+}
+
+.form-control {
+    background-color: #fcfcfc;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.form-control:focus {
+    border-color: var(--main-color);
+    box-shadow: 0 0 0 0.2rem rgba(212, 165, 165, 0.25);
+}
+
+a {
+    color: var(--main-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--main-hover);
+    text-decoration: underline;
+}
+
+/* Thêm vào cuối file css cũ */
+
+.product-card {
+    transition: transform 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px); /* Bay lên nhẹ khi di chuột vào */
+    box-shadow: 0 10px 20px rgba(212, 165, 165, 0.3);
+}
+
+.img-wrapper img {
+    transition: transform 0.5s ease;
+}
+
+.product-card:hover .img-wrapper img {
+    transform: scale(1.1); /* Phóng to ảnh nhẹ */
+}
+
+/* Sửa lại class .btn-back-home trong file style.css */
+
+.btn-back-home {
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 25px;
+    background-color: var(--main-color); /* Tô kín màu hồng đất */
+    color: white !important;             /* Chữ trắng */
+    border: none;
+    border-radius: 30px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(212, 165, 165, 0.4);
+}
+
+.btn-back-home:hover {
+    background-color: #c08e8e;           /* Màu hồng đậm hơn khi hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(212, 165, 165, 0.6);
+}
+
+.btn-back-home i {
+    margin-right: 8px;
+}

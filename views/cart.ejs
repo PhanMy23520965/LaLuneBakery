@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Giỏ hàng - La Lune Bakery</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/style.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        .qty-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%; /* Làm nút tròn */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: 0.2s;
+            border: 1px solid #ddd;
+            background: white;
+            color: #555;
+        }
+        .qty-btn:hover {
+            background-color: var(--main-color);
+            color: white;
+            border-color: var(--main-color);
+        }
+        .qty-input {
+            width: 40px;
+            text-align: center;
+            border: none;
+            background: transparent;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-light bg-light shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="/" style="color: var(--main-color);">
+                <i class="fas fa-arrow-left"></i> Tiếp tục mua bánh
+            </a>
+        </div>
+    </nav>
+
+    <div class="container mt-5 mb-5">
+        <h2 class="text-center mb-4" style="color: var(--text-color); font-family: 'Times New Roman', serif;">Giỏ Hàng Của Bạn</h2>
+        
+        <div class="card card-custom p-4 border-0 shadow-sm">
+            <% if(cart.length === 0) { %>
+                <div class="text-center py-5">
+                    <img src="https://cdn-icons-png.flaticon.com/512/11329/11329060.png" height="120" style="opacity: 0.6; margin-bottom: 20px;">
+                    <h4 style="color: var(--text-color);">Chưa có món nào</h4>
+                    <p class="text-muted">Giỏ hàng của bạn đang trống trơn, hãy thêm chút ngọt ngào nhé!</p>
+                    <a href="/" class="btn btn-lune mt-3 px-4 py-2">Quay lại chọn bánh</a>
+                </div>
+            <% } else { %>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead style="background-color: #fff5f5;">
+                            <tr class="text-muted text-uppercase" style="font-size: 0.85rem;">
+                                <th style="width: 40%">Sản phẩm</th>
+                                <th style="width: 15%">Đơn giá</th>
+                                <th style="width: 20%" class="text-center">Số lượng</th>
+                                <th style="width: 15%">Thành tiền</th>
+                                <th style="width: 10%"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% let total = 0; %>
+                            <% cart.forEach(function(item) { %>
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="<%= item.image %>" width="70" height="70" class="rounded me-3 shadow-sm" style="object-fit: cover;">
+                                            <div>
+                                                <strong style="color: var(--text-color);"><%= item.productName %></strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-muted"><%= item.price.toLocaleString('vi-VN') %>đ</td>
+                                    
+                                    <td>
+                                        <div class="d-flex justify-content-center align-items-center">
+                                            <form action="/update-cart" method="POST" class="m-0">
+                                                <input type="hidden" name="productName" value="<%= item.productName %>">
+                                                <input type="hidden" name="action" value="decrease">
+                                                <button type="submit" class="qty-btn"><i class="fas fa-minus" style="font-size: 0.8rem;"></i></button>
+                                            </form>
+
+                                            <span class="mx-3 fw-bold"><%= item.quantity %></span>
+
+                                            <form action="/update-cart" method="POST" class="m-0">
+                                                <input type="hidden" name="productName" value="<%= item.productName %>">
+                                                <input type="hidden" name="action" value="increase">
+                                                <button type="submit" class="qty-btn"><i class="fas fa-plus" style="font-size: 0.8rem;"></i></button>
+                                            </form>
+                                        </div>
+                                    </td>
+
+                                    <td class="fw-bold" style="color: var(--main-color);">
+                                        <%= (item.price * item.quantity).toLocaleString('vi-VN') %>đ
+                                    </td>
+                                    
+                                    <td class="text-end">
+                                        <form action="/remove-from-cart" method="POST" style="display:inline;">
+                                            <input type="hidden" name="productName" value="<%= item.productName %>">
+                                            <button type="submit" class="btn text-danger p-0 border-0" title="Xóa món này">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <% total += item.price * item.quantity %>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-end align-items-center mt-4 pt-3 border-top">
+                    <div class="text-end">
+                        <h4 class="mb-3">Tổng cộng: <span style="color: var(--main-color); font-size: 1.5rem;"><%= total.toLocaleString('vi-VN') %> VNĐ</span></h4>
+                        <a href="/checkout" class="btn btn-lune btn-lg px-5 shadow">
+                            Thanh toán <i class="fas fa-chevron-right ms-2"></i>
+                        </a>
+                    </div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</body>
+</html>
