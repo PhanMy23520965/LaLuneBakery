@@ -4,8 +4,6 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoStore = require('connect-mongo').default || require('connect-mongo');
 const bcrypt = require('bcryptjs');
-const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
 // Import Models
 const User = require('./models/User');
@@ -13,34 +11,12 @@ const Product = require('./models/Product');
 
 const app = express();
 
-// 1. Cấu hình Email
-const transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465, // Đổi sang cổng 465 (SSL) - Cổng này thường xuyên xuyên qua được tường lửa hơn 587
-    secure: true, // Bắt buộc true cho cổng 465
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-    tls: {
-        // Bỏ qua lỗi chứng chỉ bảo mật (giúp kết nối dễ hơn trên môi trường cloud)
-        rejectUnauthorized: false
-    },
-    // --- CẤU HÌNH CHỐNG TIMEOUT ---
-    // Tăng thời gian chờ lên 20 giây (Mặc định chỉ có 2s nên rất dễ đứt kết nối)
-    connectionTimeout: 20000, 
-    greetingTimeout: 20000,
-    socketTimeout: 20000,
-    logger: true, // Bật log chi tiết để xem nó đứng ở đâu
-    debug: true   // Bật chế độ debug
-});
-
-// 2. Kết nối Database
+// 1. Kết nối Database
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("✔ Đã kết nối MongoDB"))
     .catch(err => console.log("❌ Lỗi kết nối DB:", err));
 
-// 3. Cấu hình App
+// 2. Cấu hình App
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -49,7 +25,7 @@ app.use(session({
     resave: false,
     saveUninitialized: false,
     store: MongoStore.create({ mongoUrl: process.env.MONGO_URI }),
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } 
+    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 1 ngày
 }));
 
 // ================= ROUTES ================= //
@@ -74,71 +50,40 @@ app.get('/product/:id', async (req, res) => {
     }
 });
 
-// --- AUTHENTICATION ---
+// --- AUTHENTICATION (SĐT + Tên + Địa chỉ) ---
 
-// 1. Hiển thị trang Đăng ký (Sửa lỗi Cannot GET /register)
+// 1. Đăng ký
 app.get('/register', (req, res) => res.render('register', { error: null }));
 
-// 2. Xử lý Đăng ký (Logic mới: Cho phép đăng ký lại nếu chưa xác thực)
 app.post('/register', async (req, res) => {
     try {
-        const { fullname, email, password, confirmPassword } = req.body;
+        // Lấy phone và address thay vì email
+        const { fullname, phone, address, password, confirmPassword } = req.body;
         
-        if (password !== confirmPassword) return res.render('register', { error: 'Mật khẩu xác nhận không khớp!' });
+        if (password !== confirmPassword) {
+            return res.render('register', { error: 'Mật khẩu xác nhận không khớp!' });
+        }
         
-        const existingUser = await User.findOne({ email });
-
-        // Logic Quan Trọng:
-        // Nếu email đã có VÀ đã kích hoạt -> Báo lỗi
-        if (existingUser && existingUser.isVerified) {
-            return res.render('register', { error: 'Email này đã được đăng ký và kích hoạt!' });
+        // Kiểm tra xem SĐT đã tồn tại chưa
+        const existingUser = await User.findOne({ phone: phone });
+        if (existingUser) {
+            return res.render('register', { error: 'Số điện thoại này đã được đăng ký!' });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const token = crypto.randomBytes(32).toString('hex');
 
-        // Nếu email đã có nhưng CHƯA kích hoạt -> Cập nhật lại thông tin mới
-        if (existingUser && !existingUser.isVerified) {
-            existingUser.password = hashedPassword;
-            existingUser.fullname = fullname;
-            existingUser.verificationToken = token;
-            await existingUser.save();
-        } 
-        // Nếu chưa có -> Tạo mới
-        else {
-            await User.create({ 
-                fullname, email, password: hashedPassword, 
-                cart: [], isVerified: false, verificationToken: token 
-            });
-        }
+        // Tạo User mới với SĐT và Địa chỉ
+        await User.create({ 
+            fullname, 
+            phone, 
+            address, 
+            password: hashedPassword, 
+            cart: [] 
+        });
 
-        // Tạo Link xác thực chuẩn (Fix lỗi http/https)
-        const domain = req.headers.host; // la-lune-bakery.onrender.com
-        const protocol = req.headers['x-forwarded-proto'] || 'http'; // Tự nhận diện https trên Render
-        const verifyLink = `${protocol}://${domain}/verify-email/${token}`;
-
-        const mailOptions = {
-            from: '"La Lune Bakery" <no-reply@lalune.com>',
-            to: email,
-            subject: 'Xác thực tài khoản - La Lune Bakery',
-            html: `
-                <div style="font-family: Arial; padding: 20px; background: #F9F7F2;">
-                    <div style="max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px;">
-                        <h2 style="color: #D4A5A5; text-align: center;">Chào mừng ${fullname}! 🌙</h2>
-                        <p>Vui lòng bấm nút dưới đây để kích hoạt tài khoản:</p>
-                        <div style="text-align: center; margin: 30px 0;">
-                            <a href="${verifyLink}" style="background: #D4A5A5; color: white; padding: 12px 25px; text-decoration: none; border-radius: 25px; font-weight: bold;">Xác thực ngay</a>
-                        </div>
-                        <p style="text-align: center; font-size: 12px; color: #888;">(Link này có hiệu lực cho lần đăng ký mới nhất)</p>
-                    </div>
-                </div>`
-        };
-
-        await transporter.sendMail(mailOptions);
-        
         res.render('login', { 
             error: null, 
-            success: "🎉 Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản." 
+            success: "Đăng ký thành công! Mời bạn đăng nhập." 
         });
 
     } catch (err) {
@@ -147,113 +92,110 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// 3. Xử lý khi bấm link trong Email
-app.get('/verify-email/:token', async (req, res) => {
-    try {
-        const user = await User.findOne({ verificationToken: req.params.token });
-        
-        // Nếu không tìm thấy user khớp với token -> Báo lỗi
-        if (!user) {
-            return res.render('login', { error: "Link xác thực không hợp lệ hoặc đã hết hạn!", success: null });
-        }
-
-        // Kích hoạt
-        user.isVerified = true;
-        user.verificationToken = undefined; // Xóa token đi
-        await user.save();
-
-        res.render('login', { error: null, success: "✅ Xác thực thành công! Bạn có thể đăng nhập ngay." });
-    } catch (err) {
-        console.log(err);
-        res.redirect('/login');
-    }
-});
-
-// 4. Đăng nhập & Đăng xuất
+// 2. Đăng nhập (Dùng SĐT)
 app.get('/login', (req, res) => res.render('login', { error: null, success: null }));
 
 app.post('/login', async (req, res) => {
     try {
-        const { email, password, remember } = req.body;
-        const user = await User.findOne({ email });
+        const { phone, password, remember } = req.body;
+        
+        // Tìm user theo SĐT
+        const user = await User.findOne({ phone: phone });
 
         if (user && await bcrypt.compare(password, user.password)) {
-            // Chặn nếu chưa xác thực
-            if (!user.isVerified) {
-                return res.render('login', { 
-                    error: "⚠️ Tài khoản chưa kích hoạt! Hãy kiểm tra email (hoặc đăng ký lại để nhận mail mới).", 
-                    success: null 
-                });
-            }
-
+            
             req.session.user = user;
+            
             if (remember === 'on') {
                 req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; 
             } else {
                 req.session.cookie.expires = false;
             }
+            
             res.redirect('/');
         } else {
-            res.render('login', { error: 'Sai email hoặc mật khẩu!', success: null });
+            res.render('login', { error: 'Sai số điện thoại hoặc mật khẩu!', success: null });
         }
     } catch (err) {
         res.render('login', { error: 'Lỗi hệ thống.', success: null });
     }
 });
 
+// 3. Đăng xuất
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/'));
 });
 
-// --- GIỎ HÀNG (Sửa lỗi Cannot GET /cart và /back) ---
+// --- ADMIN & GIỎ HÀNG (Giữ nguyên logic cũ) ---
 
-// 1. Hiển thị giỏ hàng
+app.get('/admin', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+    const products = await Product.find({});
+    res.render('admin', { products: products });
+});
+
+app.get('/admin/add', (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+    res.render('admin-form', { formTitle: 'Thêm Bánh Mới', action: '/admin/add', product: {} });
+});
+
+app.post('/admin/add', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+    await Product.create(req.body);
+    res.redirect('/admin');
+});
+
+app.get('/admin/edit/:id', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+    const product = await Product.findById(req.params.id);
+    res.render('admin-form', { formTitle: 'Sửa Bánh', action: '/admin/edit/' + product._id, product: product });
+});
+
+app.post('/admin/edit/:id', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+    await Product.findByIdAndUpdate(req.params.id, req.body);
+    res.redirect('/admin');
+});
+
+app.post('/admin/delete/:id', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+    await Product.findByIdAndDelete(req.params.id);
+    res.redirect('/admin');
+});
+
 app.get('/cart', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     const user = await User.findById(req.session.user._id);
     res.render('cart', { cart: user.cart, user: user });
 });
 
-// 2. Thêm vào giỏ
 app.post('/add-to-cart', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
-    
     const { productName, price, img } = req.body;
     const user = await User.findById(req.session.user._id);
-    
     const existingIndex = user.cart.findIndex(item => item.productName === productName);
-    if (existingIndex >= 0) {
-        user.cart[existingIndex].quantity += 1;
-    } else {
-        user.cart.push({ productName, price, image: img, quantity: 1 });
-    }
-    
+    if (existingIndex >= 0) user.cart[existingIndex].quantity += 1;
+    else user.cart.push({ productName, price, image: img, quantity: 1 });
     await user.save();
     req.session.user = user;
-    
-    // SỬA LỖI EXPRESS 5: Thay 'back' bằng referer
     res.redirect(req.get('Referer') || '/');
 });
 
-// 3. Cập nhật số lượng
 app.post('/update-cart', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     const { productName, action } = req.body;
     const user = await User.findById(req.session.user._id);
-
     const index = user.cart.findIndex(item => item.productName === productName);
     if (index > -1) {
         if (action === 'increase') user.cart[index].quantity += 1;
         if (action === 'decrease') user.cart[index].quantity -= 1;
         if (user.cart[index].quantity <= 0) user.cart.splice(index, 1);
     }
-
     await user.save();
     req.session.user = user;
     res.redirect('/cart');
 });
 
-// 4. Xóa khỏi giỏ
 app.post('/remove-from-cart', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     const user = await User.findById(req.session.user._id);
@@ -263,60 +205,23 @@ app.post('/remove-from-cart', async (req, res) => {
     res.redirect('/cart');
 });
 
-// 5. Thanh toán
 app.get('/checkout', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     const user = await User.findById(req.session.user._id);
     let total = user.cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-    
     if (total === 0) return res.redirect('/cart');
     res.render('payment', { user: user, total: total });
 });
 
-// --- QUÊN MẬT KHẨU ---
-app.get('/forgot-password', (req, res) => res.render('forgot-password', { message: null, error: null }));
-
-app.post('/forgot-password', async (req, res) => {
-    const { email } = req.body;
-    const user = await User.findOne({ email });
-    if (!user) return res.render('forgot-password', { error: 'Email không tồn tại', message: null });
-
-    const token = crypto.randomBytes(20).toString('hex');
-    user.resetPasswordToken = token;
-    user.resetPasswordExpires = Date.now() + 3600000;
-    await user.save();
-
-    const domain = req.headers.host;
-    const protocol = req.headers['x-forwarded-proto'] || 'http';
-    const resetLink = `${protocol}://${domain}/reset/${token}`;
-    
-    const mailOptions = {
-        from: '"La Lune Bakery" <no-reply@lalune.com>',
-        to: email,
-        subject: 'Đặt lại mật khẩu',
-        html: `Bấm vào đây để đặt lại mật khẩu: <a href="${resetLink}">${resetLink}</a>`
-    };
-    await transporter.sendMail(mailOptions);
-    
-    res.render('forgot-password', { message: 'Đã gửi link đặt lại mật khẩu!', error: null });
-});
-
-app.get('/reset/:token', async (req, res) => {
-    const user = await User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } });
-    if (!user) return res.send("Link hết hạn.");
-    res.render('reset-password', { token: req.params.token });
-});
-
-app.post('/reset/:token', async (req, res) => {
-    const user = await User.findOne({ resetPasswordToken: req.params.token, resetPasswordExpires: { $gt: Date.now() } });
-    if (!user) return res.send("Link không hợp lệ.");
-    if (req.body.password !== req.body.confirm) return res.send("Mật khẩu không khớp.");
-
-    user.password = await bcrypt.hash(req.body.password, 10);
-    user.resetPasswordToken = undefined;
-    user.resetPasswordExpires = undefined;
-    await user.save();
-    res.redirect('/login');
+// Seed data
+app.get('/seed', async (req, res) => {
+    await Product.deleteMany({});
+    await Product.create([
+        { name: "Tiramisu Ý", price: 55000, image: "/images/tiramisu.png", origin: "Ý", weight: "200g", ingredients: "Phô mai, Cafe", meaning: "Hãy mang em đi", description: "Bánh ngon." },
+        { name: "Red Velvet", price: 60000, image: "/images/redvelvet.png", origin: "Mỹ", weight: "250g", ingredients: "Cacao", meaning: "Tình yêu", description: "Bánh đỏ." },
+        { name: "Mousse Chanh Dây", price: 45000, image: "/images/mousse.png", origin: "Pháp", weight: "180g", ingredients: "Chanh dây", meaning: "Tươi mát", description: "Bánh chua." }
+    ]);
+    res.send("Đã tạo dữ liệu mẫu.");
 });
 
 const PORT = process.env.PORT || 3000;

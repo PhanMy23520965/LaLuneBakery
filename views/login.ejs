@@ -3,15 +3,21 @@
 <head>
     <title>Đăng nhập - La Lune Bakery</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="/css/style.css" rel="stylesheet">
+    <style>
+        body { background-color: #F9F7F2; }
+        .card-login { max-width: 400px; margin: 80px auto; border: none; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        .btn-lune { background-color: #D4A5A5; color: white; border: none; }
+        .btn-lune:hover { background-color: #C08B8B; color: white; }
+    </style>
 </head>
 <body>
-    <div class="container d-flex justify-content-center align-items-center" style="min-height: 100vh;">
-        <div class="card card-custom p-4" style="width: 400px;">
-            <div class="text-center mb-4">
-                <img src="/images/logo.png" height="80">
-                <h4 class="mt-3" style="color: var(--main-color);">Đăng Nhập</h4>
-            </div>
+    <div class="container">
+        <div class="card card-login p-4 bg-white">
+            <h3 class="text-center mb-4" style="color: #D4A5A5;">Đăng Nhập</h3>
+
+            <% if(locals.success) { %>
+                <div class="alert alert-success"><%= success %></div>
+            <% } %>
 
             <% if(error) { %>
                 <div class="alert alert-danger"><%= error %></div>
@@ -19,26 +25,25 @@
 
             <form action="/login" method="POST">
                 <div class="mb-3">
-                    <label>Email</label>
-                    <input type="email" name="email" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label>Mật khẩu</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                
-                <div class="d-flex justify-content-between mb-3">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="remember" id="rememberMe">
-                        <label class="form-check-label" for="rememberMe">Ghi nhớ tôi</label>
-                    </div>
-                    <a href="/forgot-password" style="font-size: 0.9rem;">Quên mật khẩu?</a>
+                    <label class="form-label fw-bold">Số điện thoại</label>
+                    <input type="text" name="phone" class="form-control" placeholder="Nhập SĐT của bạn" required>
                 </div>
 
-                <button type="submit" class="btn btn-lune w-100">Đăng Nhập</button>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Mật khẩu</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" name="remember" id="remember">
+                    <label class="form-check-label" for="remember">Ghi nhớ tôi</label>
+                </div>
+
+                <button type="submit" class="btn btn-lune w-100 py-2 fw-bold">Đăng Nhập</button>
             </form>
+
             <div class="text-center mt-3">
-                <small>Chưa là thành viên? <a href="/register">Đăng ký ngay</a></small>
+                Chưa là thành viên? <a href="/register" style="color: #D4A5A5;">Đăng ký ngay</a>
             </div>
         </div>
     </div>

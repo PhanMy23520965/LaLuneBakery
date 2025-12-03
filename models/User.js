@@ -1,21 +1,20 @@
-// models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-    fullname: { type: String, required: true }, // Thêm tên đầy đủ
-    email: { type: String, required: true, unique: true },
+    fullname: String,
+    // Đổi email thành phone
+    phone: { type: String, unique: true, required: true },
+    // Thêm địa chỉ
+    address: { type: String, default: "" },
     password: { type: String, required: true },
     cart: [
         {
             productName: String,
             price: Number,
-            quantity: { type: Number, default: 1 },
-            image: String
+            image: String,
+            quantity: { type: Number, default: 1 }
         }
-    ],
-    // Hai trường này dùng cho Quên Mật Khẩu
-    resetPasswordToken: String,
-    resetPasswordExpires: Date
+    ]
 });
 
 module.exports = mongoose.model('User', userSchema);
