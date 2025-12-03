@@ -224,5 +224,14 @@ app.get('/seed', async (req, res) => {
     res.send("Đã tạo dữ liệu mẫu.");
 });
 
+app.get('/reset-db', async (req, res) => {
+    try {
+        // Xóa toàn bộ Collection Users (bao gồm cả Index cũ bị lỗi)
+        await mongoose.connection.collection('users').drop();
+        res.send("Đã xóa sạch dữ liệu User cũ và Index lỗi. Giờ bạn có thể đăng ký bình thường!");
+    } catch (err) {
+        res.send("Có lỗi hoặc DB đã sạch rồi: " + err.message);
+    }
+});
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server đang chạy tại port ${PORT}`));
