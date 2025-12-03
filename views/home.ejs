@@ -20,8 +20,24 @@
 
             <div>
                 <% if(user) { %>
-                    <span class="me-2">Chào, <%= user.fullname || user.email %></span>
-                    <a href="/cart" class="btn btn-outline-danger"><i class="fas fa-shopping-cart"></i></a>
+                    <div class="d-flex align-items-center">
+                        <span class="me-3 d-none d-sm-inline-block" style="color: var(--text-color);">
+                            Chào, <strong><%= user.fullname || "Khách hàng" %></strong>
+                        </span>
+
+                        <a href="/cart" class="btn btn-outline-danger me-2 position-relative">
+                            <i class="fas fa-shopping-cart"></i>
+                            <% if(user.cart && user.cart.length > 0) { %>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    <%= user.cart.length %>
+                                </span>
+                            <% } %>
+                        </a>
+
+                        <a href="/logout" class="btn btn-sm btn-outline-secondary" title="Đăng xuất">
+                            <i class="fas fa-sign-out-alt"></i> Thoát
+                        </a>
+                    </div>
                 <% } else { %>
                     <a href="/login" class="btn btn-lune">Đăng nhập</a>
                 <% } %>
@@ -32,7 +48,7 @@
     <div class="intro-section text-center py-5" style="background-color: #fdfbf7;">
         <div class="container">
             <div class="mb-3">
-                <img src="/images/logo.png" style="height: 200px; width: auto;" alt="La Lune Logo">
+                <img src="/images/logo1.png" style="height: 200px; width: auto;" alt="La Lune Logo">
             </div>
 
             <h2 class="display-5" style="color: var(--main-color); font-family: 'Times New Roman', serif;">Câu chuyện La Lune</h2>
