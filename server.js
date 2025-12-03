@@ -213,17 +213,6 @@ app.get('/checkout', async (req, res) => {
     res.render('payment', { user: user, total: total });
 });
 
-// Seed data
-app.get('/seed', async (req, res) => {
-    await Product.deleteMany({});
-    await Product.create([
-        { name: "Tiramisu Ý", price: 55000, image: "/images/tiramisu.png", origin: "Ý", weight: "200g", ingredients: "Phô mai, Cafe", meaning: "Hãy mang em đi", description: "Bánh ngon." },
-        { name: "Red Velvet", price: 60000, image: "/images/redvelvet.png", origin: "Mỹ", weight: "250g", ingredients: "Cacao", meaning: "Tình yêu", description: "Bánh đỏ." },
-        { name: "Mousse Chanh Dây", price: 45000, image: "/images/mousse.png", origin: "Pháp", weight: "180g", ingredients: "Chanh dây", meaning: "Tươi mát", description: "Bánh chua." }
-    ]);
-    res.send("Đã tạo dữ liệu mẫu.");
-});
-
 app.get('/reset-db', async (req, res) => {
     try {
         // Xóa toàn bộ Collection Users (bao gồm cả Index cũ bị lỗi)
@@ -233,5 +222,6 @@ app.get('/reset-db', async (req, res) => {
         res.send("Có lỗi hoặc DB đã sạch rồi: " + err.message);
     }
 });
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server đang chạy tại port ${PORT}`));
