@@ -15,10 +15,16 @@ const app = express();
 
 // 1. Cấu hình Email
 const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false, // false cho port 587, true cho port 465
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS 
+        pass: process.env.EMAIL_PASS
+    },
+    tls: {
+        // Không từ chối chứng chỉ máy chủ (giúp tránh lỗi SSL trên Render)
+        rejectUnauthorized: false 
     }
 });
 
