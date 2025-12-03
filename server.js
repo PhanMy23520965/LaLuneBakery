@@ -16,16 +16,23 @@ const app = express();
 // 1. Cấu hình Email
 const transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
-    port: 587,
-    secure: false, // false cho port 587, true cho port 465
+    port: 465, // Đổi sang cổng 465 (SSL) - Cổng này thường xuyên xuyên qua được tường lửa hơn 587
+    secure: true, // Bắt buộc true cho cổng 465
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     },
     tls: {
-        // Không từ chối chứng chỉ máy chủ (giúp tránh lỗi SSL trên Render)
-        rejectUnauthorized: false 
-    }
+        // Bỏ qua lỗi chứng chỉ bảo mật (giúp kết nối dễ hơn trên môi trường cloud)
+        rejectUnauthorized: false
+    },
+    // --- CẤU HÌNH CHỐNG TIMEOUT ---
+    // Tăng thời gian chờ lên 20 giây (Mặc định chỉ có 2s nên rất dễ đứt kết nối)
+    connectionTimeout: 20000, 
+    greetingTimeout: 20000,
+    socketTimeout: 20000,
+    logger: true, // Bật log chi tiết để xem nó đứng ở đâu
+    debug: true   // Bật chế độ debug
 });
 
 // 2. Kết nối Database
