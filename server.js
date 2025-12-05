@@ -31,20 +31,40 @@ app.use(session({
 // ================= ROUTES ================= //
 
 // --- TRANG CHỦ ---
+
 app.get('/', async (req, res) => {
     let query = {};
     if (req.query.search) {
         query.name = { $regex: req.query.search, $options: 'i' };
     }
     const products = await Product.find(query);
-    res.render('home', { user: req.session.user, products: products, search: req.query.search });
+
+    // Lấy thông báo từ session ra (nếu có)
+    const message = req.session.message;
+    delete req.session.message; // Xóa đi để F5 không hiện lại
+
+    res.render('home', { 
+        user: req.session.user, 
+        products: products, 
+        search: req.query.search,
+        message: message // Truyền thông báo sang view
+    });
 });
 
 // --- CHI TIẾT SẢN PHẨM ---
 app.get('/product/:id', async (req, res) => {
     try {
         const product = await Product.findById(req.params.id);
-        res.render('product-detail', { user: req.session.user, product: product });
+        
+        // Lấy thông báo từ session
+        const message = req.session.message;
+        delete req.session.message;
+
+        res.render('product-detail', { 
+            user: req.session.user, 
+            product: product,
+            message: message // Truyền thông báo sang view
+        });
     } catch (err) {
         res.redirect('/');
     }
@@ -173,11 +193,18 @@ app.post('/add-to-cart', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     const { productName, price, img } = req.body;
     const user = await User.findById(req.session.user._id);
+    
     const existingIndex = user.cart.findIndex(item => item.productName === productName);
     if (existingIndex >= 0) user.cart[existingIndex].quantity += 1;
     else user.cart.push({ productName, price, image: img, quantity: 1 });
+    
     await user.save();
     req.session.user = user;
+
+    // --- THÊM DÒNG NÀY ĐỂ LƯU THÔNG BÁO ---
+    req.session.message = "Đã thêm bánh vào giỏ hàng thành công! 🍰";
+    // -------------------------------------
+
     res.redirect(req.get('Referer') || '/');
 });
 
