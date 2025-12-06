@@ -97,11 +97,11 @@
                         
                         <!-- Nội dung thẻ -->
                         <div class="card-body text-center d-flex flex-column justify-content-between p-4">
-                            <div>
-                                <h5 class="card-title fw-bold">
+                            <div class="name-price-wrapper"> 
+                                <h5 class="card-title fw-bold product-name">
                                     <a href="/product/<%= cake._id %>" style="text-decoration: none; color: var(--text-color)"><%= cake.name %></a>
                                 </h5>
-                                <p class="card-text fw-bold fs-5" style="color: var(--main-color)">
+                                <p class="card-text fw-bold fs-5 mb-3" style="color: var(--main-color)">
                                     <%= cake.price.toLocaleString('vi-VN') %> VNĐ
                                 </p>
                             </div>

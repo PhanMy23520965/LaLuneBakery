@@ -100,3 +100,23 @@ a:hover {
 .btn-back-home i {
     margin-right: 8px;
 }
+
+/* Đảm bảo tên sản phẩm chỉ hiển thị tối đa 2 dòng */
+.product-name a {
+    /* Đặt chiều cao cố định cho tên sản phẩm */
+    height: 3rem; /* Ví dụ: 1.5rem (chiều cao 1 dòng) * 2 dòng = 3rem */
+    
+    /* Các thuộc tính để giới hạn số dòng và thêm dấu '...' */
+    display: -webkit-box;
+    -webkit-line-clamp: 2; /* Số dòng tối đa */
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.5rem; /* Chiều cao mỗi dòng */
+    margin-bottom: 0.5rem; /* Điều chỉnh khoảng cách nếu cần */
+}
+
+/* Thêm vào CSS để cố định chiều cao của cả khu vực tên và giá */
+.name-price-wrapper {
+    min-height: 5.5rem; /* Chiều cao tối thiểu, tùy chỉnh theo kích thước font bạn đặt */
+}
